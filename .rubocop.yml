@@ -33,6 +33,10 @@ RSpec/MultipleMemoizedHelpers:
 RSpec/NestedGroups:
   Max: 7
 
+RSpec/FilePath:
+  Exclude:
+    - spec/lib/rails_outbox/outboxable/*
+
 RSpec/SpecFilePathFormat:
   Exclude:
     - spec/lib/rails_outbox/outboxable/*
