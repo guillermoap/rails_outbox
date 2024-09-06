@@ -5,12 +5,12 @@ require 'rails/generators/active_record'
 require 'rails/generators/base'
 require 'rails/generators/migration'
 
-module ActiveOutbox
+module RailsOutbox
   module Generators
     class ModelGenerator < Rails::Generators::Base
       source_root File.expand_path('../templates', __dir__)
 
-      include ActiveOutbox::AdapterHelper
+      include RailsOutbox::AdapterHelper
       include Rails::Generators::Migration
 
       class << self
@@ -32,7 +32,7 @@ module ActiveOutbox
         migration_path = "#{root_path}/db/migrate"
         migration_template(
           'migration.rb',
-          "#{migration_path}/active_outbox_create_#{table_name}.rb",
+          "#{migration_path}/rails_outbox_create_#{table_name}.rb",
           migration_version: migration_version
         )
 
@@ -67,7 +67,7 @@ module ActiveOutbox
       end
 
       def aggregate_identifier_type
-        options['uuid'].present? ? ActiveOutbox::AdapterHelper.uuid_type : ActiveOutbox::AdapterHelper.bigint_type
+        options['uuid'].present? ? RailsOutbox::AdapterHelper.uuid_type : RailsOutbox::AdapterHelper.bigint_type
       end
     end
   end

@@ -16,8 +16,8 @@ jobs:
         uses: discourse/publish-rubygems-action@v3
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-          GIT_EMAIL: ${{secrets.GIT_EMAIL}}
-          GIT_NAME: ${{secrets.GIT_NAME}}
+          GIT_EMAIL: guillermoaguirre@hey.com
+          GIT_NAME: Guillermo Aguirre
           RUBYGEMS_API_KEY: ${{secrets.RUBYGEMS_API_KEY}}
       - name: Create GitHub Release
         run: gh release create v${{steps.tag-and-push-gem.outputs.gem_version}} --generate-notes

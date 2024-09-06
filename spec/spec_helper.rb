@@ -2,7 +2,7 @@
 
 ENV['RAILS_ENV'] ||= 'test'
 
-require 'active_outbox'
+require 'rails_outbox'
 require 'active_record'
 require 'byebug'
 require 'database_cleaner/active_record'

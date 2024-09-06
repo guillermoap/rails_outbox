@@ -2,7 +2,7 @@
 
 require 'active_support/concern'
 
-module ActiveOutbox
+module RailsOutbox
   module Outboxable
     extend ActiveSupport::Concern
 
@@ -10,21 +10,21 @@ module ActiveOutbox
       *namespace, klass = name.underscore.upcase.split('/')
       namespace = namespace.reverse.join('.')
 
-      module_parent.const_set('ActiveOutbox', Module.new) unless module_parent.const_defined?('ActiveOutbox', false)
+      module_parent.const_set('RailsOutbox', Module.new) unless module_parent.const_defined?('RailsOutbox', false)
 
-      unless module_parent::ActiveOutbox.const_defined?('Events', false)
-        module_parent::ActiveOutbox.const_set('Events', Module.new)
+      unless module_parent::RailsOutbox.const_defined?('Events', false)
+        module_parent::RailsOutbox.const_set('Events', Module.new)
       end
 
       { create: 'CREATED', update: 'UPDATED', destroy: 'DESTROYED' }.each do |key, value|
         const_name = "#{klass}_#{value}"
 
-        unless module_parent::ActiveOutbox::Events.const_defined?(const_name)
-          module_parent::ActiveOutbox::Events.const_set(const_name,
+        unless module_parent::RailsOutbox::Events.const_defined?(const_name)
+          module_parent::RailsOutbox::Events.const_set(const_name,
             "#{const_name}#{namespace.blank? ? '' : '.'}#{namespace}")
         end
 
-        event_name = module_parent::ActiveOutbox::Events.const_get(const_name)
+        event_name = module_parent::RailsOutbox::Events.const_get(const_name)
 
         send("after_#{key}") { create_outbox!(key, event_name) }
       end
@@ -77,11 +77,11 @@ module ActiveOutbox
     def namespace_outbox_mapping
       namespace = self.class.module_parent.name.underscore
 
-      ActiveOutbox.config.outbox_mapping[namespace]
+      RailsOutbox.config.outbox_mapping[namespace]
     end
 
     def default_outbox_mapping
-      ActiveOutbox.config.outbox_mapping['default']
+      RailsOutbox.config.outbox_mapping['default']
     end
 
     def handle_outbox_errors(outbox)

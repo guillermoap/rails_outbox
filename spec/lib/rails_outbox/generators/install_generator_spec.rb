@@ -3,20 +3,20 @@
 require 'spec_helper'
 require 'generator_spec'
 require 'tempfile'
-require 'generators/active_outbox/install/install_generator'
+require 'generators/rails_outbox/install/install_generator'
 
-RSpec.describe ActiveOutbox::Generators::InstallGenerator, type: :generator do
+RSpec.describe RailsOutbox::Generators::InstallGenerator, type: :generator do
   destination File.expand_path('tmp', __dir__)
 
   let(:root) { double }
-  let(:initializer_file_path) { "#{destination_root}/config/initializers/active_outbox.rb" }
+  let(:initializer_file_path) { "#{destination_root}/config/initializers/rails_outbox.rb" }
   let(:actual_content) { File.read(initializer_file_path) }
   let(:expected_content) do
     <<~FILE
       Rails.application.reloader.to_prepare do
-        ActiveOutbox.configure do |config|
+        RailsOutbox.configure do |config|
           # To configure which Outbox class maps to which domain
-          # See https://github.com/rootstrap/active_outbox#advanced-usage for advanced examples
+          # See https://github.com/guillermoap/rails_outbox#advanced-usage for advanced examples
           config.outbox_mapping = {
             'default' => 'Outbox'
           }

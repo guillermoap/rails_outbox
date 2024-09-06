@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-RSpec.describe ActiveOutbox::Outboxable do
+RSpec.describe RailsOutbox::Outboxable do
   let(:fake_model_class) { double }
   let(:outbox_class) { double }
   let(:fake_model_instance) { double }
@@ -68,13 +68,13 @@ RSpec.describe ActiveOutbox::Outboxable do
       subject(:save_instance) { fake_model_instance.save }
 
       context 'when record is created' do
-        context 'when the ActiveOutbox configuration is not set' do
+        context 'when the RailsOutbox configuration is not set' do
           before do
-            allow(ActiveOutbox.config).to receive(:outbox_mapping).and_return({ 'default' => nil })
+            allow(RailsOutbox.config).to receive(:outbox_mapping).and_return({ 'default' => nil })
           end
 
           include_examples 'raises an error and does not create neither the record nor the outbox record',
-            ActiveOutbox::OutboxClassNotFoundError
+            RailsOutbox::OutboxClassNotFoundError
         end
 
         context 'when outbox record is created' do

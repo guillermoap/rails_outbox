@@ -31,7 +31,7 @@ FakeModel = Class.new(ActiveRecord::Base) do
   end
 
   validates_presence_of :test_field
-  include ActiveOutbox::Outboxable
+  include RailsOutbox::Outboxable
 end
 
 Uuid::FakeModel = Class.new(ActiveRecord::Base) do
@@ -44,7 +44,7 @@ Uuid::FakeModel = Class.new(ActiveRecord::Base) do
   end
 
   validates_presence_of :test_field
-  include ActiveOutbox::Outboxable
+  include RailsOutbox::Outboxable
 end
 
 def create_migrations
@@ -58,9 +58,9 @@ def id_migrations
   end
 
   ActiveRecord::Base.connection.create_table :outboxes, if_not_exists: true do |t|
-    t.send(ActiveOutbox::AdapterHelper.uuid_type, :identifier, null: false, index: { unique: true })
+    t.send(RailsOutbox::AdapterHelper.uuid_type, :identifier, null: false, index: { unique: true })
     t.string :event, null: false
-    t.send(ActiveOutbox::AdapterHelper.json_type, :payload)
+    t.send(RailsOutbox::AdapterHelper.json_type, :payload)
     t.string :aggregate, null: false
     t.integer :aggregate_identifier, null: false
 
@@ -70,16 +70,16 @@ end
 
 def uuid_migrations
   ActiveRecord::Base.connection.create_table :uuid_fake_models, if_not_exists: true, id: false do |t|
-    t.send(ActiveOutbox::AdapterHelper.uuid_type, :identifier, primary_key: true)
+    t.send(RailsOutbox::AdapterHelper.uuid_type, :identifier, primary_key: true)
     t.string :test_field
   end
 
   ActiveRecord::Base.connection.create_table :uuid_outboxes, if_not_exists: true do |t|
-    t.send(ActiveOutbox::AdapterHelper.uuid_type, :identifier, null: false, index: { unique: true })
+    t.send(RailsOutbox::AdapterHelper.uuid_type, :identifier, null: false, index: { unique: true })
     t.string :event, null: false
-    t.send(ActiveOutbox::AdapterHelper.json_type, :payload)
+    t.send(RailsOutbox::AdapterHelper.json_type, :payload)
     t.string :aggregate, null: false
-    t.send(ActiveOutbox::AdapterHelper.uuid_type, :aggregate_identifier, null: false)
+    t.send(RailsOutbox::AdapterHelper.uuid_type, :aggregate_identifier, null: false)
 
     t.timestamps
   end

@@ -33,9 +33,9 @@ jobs:
           - 3306:3306
         env:
           MYSQL_ROOT_PASSWORD: password
-          MYSQL_USER: active_outbox_user
+          MYSQL_USER: rails_outbox_user
           MYSQL_PASSWORD: password
-          MYSQL_DATABASE: active_outbox_db
+          MYSQL_DATABASE: rails_outbox_db
         options: >-
           --health-cmd "mysqladmin ping"
           --health-interval 10s
@@ -66,8 +66,8 @@ jobs:
         run: bundle exec rspec
         env:
           ADAPTER: mysql2
-          MYSQL_DATABASE: active_outbox_db
+          MYSQL_DATABASE: rails_outbox_db
           MYSQL_HOST: 127.0.0.1
           MYSQL_PORT: 3306
-          MYSQL_USER: active_outbox_user
+          MYSQL_USER: rails_outbox_user
           MYSQL_PASSWORD: password

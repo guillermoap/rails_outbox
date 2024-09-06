@@ -2,6 +2,6 @@
 # frozen_string_literal: true
 
 require 'rails'
-require 'active_outbox'
+require 'rails_outbox'
 
 rails g outbox ARGV[0]

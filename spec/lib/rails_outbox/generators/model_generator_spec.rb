@@ -3,9 +3,9 @@
 require 'spec_helper'
 require 'generator_spec'
 require 'tempfile'
-require 'generators/active_outbox/model/model_generator'
+require 'generators/rails_outbox/model/model_generator'
 
-RSpec.describe ActiveOutbox::Generators::ModelGenerator, type: :generator do
+RSpec.describe RailsOutbox::Generators::ModelGenerator, type: :generator do
   destination File.expand_path('tmp', __dir__)
 
   before do
@@ -22,7 +22,7 @@ RSpec.describe ActiveOutbox::Generators::ModelGenerator, type: :generator do
 
   let(:table_name) { '' }
   let(:migration_file_path) do
-    "#{destination_root}/db/migrate/#{timestamp_of_migration}_active_outbox_create_#{table_name}_outboxes.rb"
+    "#{destination_root}/db/migrate/#{timestamp_of_migration}_rails_outbox_create_#{table_name}_outboxes.rb"
   end
   let(:timestamp_of_migration) { DateTime.now.in_time_zone('UTC').strftime('%Y%m%d%H%M%S') }
 
@@ -44,12 +44,12 @@ RSpec.describe ActiveOutbox::Generators::ModelGenerator, type: :generator do
   shared_examples 'creates the correct migrations for supported adapters' do
     context 'when it is a mysql migration' do
       before do
-        allow(ActiveOutbox::AdapterHelper).to receive_messages(postgres?: false, mysql?: true)
+        allow(RailsOutbox::AdapterHelper).to receive_messages(postgres?: false, mysql?: true)
       end
 
       let(:expected_content) do
         <<~MIGRATION
-          class ActiveOutboxCreate#{table_name.camelize}Outboxes < ActiveRecord::Migration[#{active_record_dependency}]
+          class RailsOutboxCreate#{table_name.camelize}Outboxes < ActiveRecord::Migration[#{active_record_dependency}]
             def change
               create_table :#{table_name}#{table_name.blank? ? '' : '_'}outboxes do |t|
                 t.string :identifier, null: false, index: { unique: true }
@@ -73,12 +73,12 @@ RSpec.describe ActiveOutbox::Generators::ModelGenerator, type: :generator do
 
     context 'when it is a sqlite migration' do
       before do
-        allow(ActiveOutbox::AdapterHelper).to receive_messages(postgres?: false, mysql?: false)
+        allow(RailsOutbox::AdapterHelper).to receive_messages(postgres?: false, mysql?: false)
       end
 
       let(:expected_content) do
         <<~MIGRATION
-          class ActiveOutboxCreate#{table_name.camelize}Outboxes < ActiveRecord::Migration[#{active_record_dependency}]
+          class RailsOutboxCreate#{table_name.camelize}Outboxes < ActiveRecord::Migration[#{active_record_dependency}]
             def change
               create_table :#{table_name}#{table_name.blank? ? '' : '_'}outboxes do |t|
                 t.string :identifier, null: false, index: { unique: true }
@@ -102,12 +102,12 @@ RSpec.describe ActiveOutbox::Generators::ModelGenerator, type: :generator do
 
     context 'when it is a postgres migration' do
       before do
-        allow(ActiveOutbox::AdapterHelper).to receive(:postgres?).and_return(true)
+        allow(RailsOutbox::AdapterHelper).to receive(:postgres?).and_return(true)
       end
 
       let(:expected_content) do
         <<~MIGRATION
-          class ActiveOutboxCreate#{table_name.camelize}Outboxes < ActiveRecord::Migration[#{active_record_dependency}]
+          class RailsOutboxCreate#{table_name.camelize}Outboxes < ActiveRecord::Migration[#{active_record_dependency}]
             def change
               create_table :#{table_name}#{table_name.blank? ? '' : '_'}outboxes do |t|
                 t.uuid :identifier, null: false, index: { unique: true }
@@ -132,7 +132,7 @@ RSpec.describe ActiveOutbox::Generators::ModelGenerator, type: :generator do
 
   context 'with default outbox name' do
     let(:migration_file_path) do
-      "#{destination_root}/db/migrate/#{timestamp_of_migration}_active_outbox_create_outboxes.rb"
+      "#{destination_root}/db/migrate/#{timestamp_of_migration}_rails_outbox_create_outboxes.rb"
     end
 
     let(:model_file_path) do

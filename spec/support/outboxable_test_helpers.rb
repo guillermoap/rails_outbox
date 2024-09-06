@@ -13,7 +13,7 @@ module OutboxableTestHelpers
         @attributes = @attributes.call if @attributes.is_a? Proc
         outboxes = outbox_class.last(count).map do |outbox|
           outbox.attributes.tap do |attr|
-            attr['payload'] = JSON.parse(attr['payload']) unless ActiveOutbox::AdapterHelper.postgres?
+            attr['payload'] = JSON.parse(attr['payload']) unless RailsOutbox::AdapterHelper.postgres?
           end
         end
         expect(outboxes).to match(array_including(hash_including(@attributes)))

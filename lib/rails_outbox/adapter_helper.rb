@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module ActiveOutbox
+module RailsOutbox
   module AdapterHelper
     def self.uuid_type
       return 'uuid' if postgres?

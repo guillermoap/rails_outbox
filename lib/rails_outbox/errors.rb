@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 
-module ActiveOutbox
+module RailsOutbox
   class OutboxConfigurationError < StandardError; end
 
   class OutboxClassNotFoundError < OutboxConfigurationError
     def message
       <<~MESSAGE
-        Missing Outbox class definition. Configure mapping in `config/initializers/active_outbox.rb`:
+        Missing Outbox class definition. Configure mapping in `config/initializers/rails_outbox.rb`:
 
         Rails.application.reloader.to_prepare do
-          ActiveOutbox.configure do |config|
+          RailsOutbox.configure do |config|
             config.outbox_mapping = {
               'default' => <outbox model name>
             }

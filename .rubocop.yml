@@ -10,7 +10,7 @@ AllCops:
   NewCops: enable
   TargetRubyVersion: 3.0
   Exclude:
-    - lib/generators/active_outbox/templates/*
+    - lib/generators/rails_outbox/templates/*
 
 Gemspec/RequireMFA:
   Enabled: false
@@ -35,11 +35,11 @@ RSpec/NestedGroups:
 
 RSpec/FilePath:
   Exclude:
-    - spec/lib/active_outbox/outboxable/*
+    - spec/lib/rails_outbox/outboxable/*
 
 RSpec/SpecFilePathFormat:
   Exclude:
-    - spec/lib/active_outbox/outboxable/*
+    - spec/lib/rails_outbox/outboxable/*
 
 Style/Documentation:
   Enabled: false
