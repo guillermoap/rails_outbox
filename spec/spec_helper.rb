@@ -4,6 +4,7 @@ ENV['RAILS_ENV'] ||= 'test'
 
 require 'rails_outbox'
 require 'active_record'
+require 'active_support/testing/time_helpers'
 require 'byebug'
 require 'database_cleaner/active_record'
 require 'simplecov'
@@ -55,6 +56,7 @@ RSpec.configure do |config|
     c.syntax = :expect
   end
 
+  config.include ActiveSupport::Testing::TimeHelpers
   config.include OutboxableTestHelpers
 
   config.before(:suite) do
