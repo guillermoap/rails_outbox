@@ -3,6 +3,19 @@
 module RailsOutbox
   class OutboxConfigurationError < StandardError; end
 
+  class OutboxEventNotFound < StandardError
+    attr_reader :event
+
+    def initialize(event)
+      super
+      @event = event
+    end
+
+    def message
+      "event #{event} could not be found in supported events"
+    end
+  end
+
   class OutboxClassNotFoundError < OutboxConfigurationError
     def message
       <<~MESSAGE
