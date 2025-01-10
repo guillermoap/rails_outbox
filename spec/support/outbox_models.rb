@@ -27,6 +27,20 @@ Uuid::Outbox = Class.new(ActiveRecord::Base) do
   before_validation -> { self.id = SecureRandom.uuid if id.nil? }
 end
 
+FakeEmitsModel = Class.new(ActiveRecord::Base) do
+  def self.name
+    'FakeEmitsModel'
+  end
+
+  def self.table_name
+    'fake_models'
+  end
+
+  validates_presence_of :test_field
+
+  extend RailsOutbox::Emits
+end
+
 FakeModel = Class.new(ActiveRecord::Base) do
   def self.name
     'FakeModel'
