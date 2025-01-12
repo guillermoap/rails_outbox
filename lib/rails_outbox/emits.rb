@@ -2,6 +2,16 @@ require 'rails_outbox/constants'
 
 module RailsOutbox
   module Emits
+    def self.extended(base)
+      base.include InstanceMethods
+    end
+
+    module InstanceMethods
+      def has_event_config?(event)
+        self.class.instance_variable_get(:@outbox_events)&.[](event).present?
+      end
+    end
+
     def emits_on(*attributes)
       @outbox_events ||= {}
       validate_attributes!(attributes)
@@ -43,7 +53,6 @@ module RailsOutbox
     def merge_default_events
       @default_events.each do |event|
         existing = @outbox_events[event]
-
         if existing.nil?
           @outbox_events[event] = { event: :default }
         elsif existing[:column] && existing[:column][:event] == :default

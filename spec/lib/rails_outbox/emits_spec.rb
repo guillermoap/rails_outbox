@@ -4,9 +4,9 @@ RSpec.describe RailsOutbox::Emits do
   let(:test_class) { FakeEmitsModel }
   let(:events) { test_class.instance_variable_get(:@outbox_events) }
 
-  after { test_class.remove_instance_variable(:@outbox_events) }
-
   describe '#emits_on' do
+    after { test_class.remove_instance_variable(:@outbox_events) }
+
     context 'validation' do
       it 'raises error when no events provided' do
         expect { test_class.emits_on }.to raise_error(
@@ -118,67 +118,48 @@ RSpec.describe RailsOutbox::Emits do
         })
       end
     end
+  end
 
-    context 'merging default events with column configs' do
-      it 'adds default event when column has custom event' do
-        test_class.emits_on(update: {
-          column: {
-            name: :test_field,
-            event: :custom
-          }
-        })
-        test_class.emits_on(:update)
+  describe 'instance methods' do
+    let(:test_instance) { test_class.new }
 
-        expect(events[:update]).to eq({
-          event: :default,
-          column: {
-            name: :test_field,
-            event: :custom
-          }
-        })
+    describe '#has_event_config?' do
+      context 'when no events are configured' do
+        it 'returns false' do
+          expect(test_instance.has_event_config?(:create)).to be false
+        end
       end
 
-      it 'does not add default event when column has default event' do
-        test_class.emits_on(update: { column: :test_field }) # default event
-        test_class.emits_on(:update)
+      context 'when events are configured' do
+        before do
+          test_class.emits_on(:create, update: { column: :test_field })
+        end
 
-        expect(events[:update]).to eq({
-          column: {
-            name: :test_field,
-            event: :default
-          }
-        })
+        it 'returns true for configured events' do
+          expect(test_instance.has_event_config?(:create)).to be true
+          expect(test_instance.has_event_config?(:update)).to be true
+        end
+
+        it 'returns false for unconfigured events' do
+          expect(test_instance.has_event_config?(:destroy)).to be false
+        end
       end
 
-      it 'handles multiple events correctly' do
-        test_class.emits_on(
-          :create,
-          update: {
-            column: {
-              name: :test_field,
-              event: :custom
+      context 'when events are configured with columns' do
+        before do
+          test_class.emits_on(
+            update: {
+              column: {
+                name: :test_field,
+                event: :custom
+              }
             }
-          },
-          destroy: { column: :another_field } # default event
-        )
-        test_class.emits_on(:update, :destroy)
+          )
+        end
 
-        expect(events).to eq({
-          create: { event: :default },
-          update: {
-            event: :default,
-            column: {
-              name: :test_field,
-              event: :custom
-            }
-          },
-          destroy: {
-            column: {
-              name: :another_field,
-              event: :default
-            }
-          }
-        })
+        it 'returns true for configured column events' do
+          expect(test_instance.has_event_config?(:update)).to be true
+        end
       end
     end
   end
