@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 RSpec.describe RailsOutbox::Emits do
@@ -7,7 +9,7 @@ RSpec.describe RailsOutbox::Emits do
   describe '#emits_on' do
     after { test_class.remove_instance_variable(:@outbox_events) }
 
-    context 'validation' do
+    context 'with invalid arguments' do
       it 'raises error when no events provided' do
         expect { test_class.emits_on }.to raise_error(
           ArgumentError, 'You need to supply at least one event'
@@ -21,7 +23,7 @@ RSpec.describe RailsOutbox::Emits do
       end
     end
 
-    context 'basic events' do
+    context 'with basic events' do
       it 'handles single event' do
         test_class.emits_on(:create)
 
@@ -40,7 +42,7 @@ RSpec.describe RailsOutbox::Emits do
       end
     end
 
-    context 'column tracking' do
+    context 'with column tracking' do
       it 'normalizes simple column reference' do
         test_class.emits_on(update: { column: :test_field })
 
@@ -88,7 +90,7 @@ RSpec.describe RailsOutbox::Emits do
       end
     end
 
-    context 'multiple configurations' do
+    context 'with multiple configurations' do
       it 'handles mix of default and column events' do
         test_class.emits_on(
           :create,
@@ -123,10 +125,10 @@ RSpec.describe RailsOutbox::Emits do
   describe 'instance methods' do
     let(:test_instance) { test_class.new }
 
-    describe '#has_event_config?' do
+    describe '#event_config?' do
       context 'when no events are configured' do
         it 'returns false' do
-          expect(test_instance.has_event_config?(:create)).to be false
+          expect(test_instance.event_config?(:create)).to be false
         end
       end
 
@@ -136,12 +138,12 @@ RSpec.describe RailsOutbox::Emits do
         end
 
         it 'returns true for configured events' do
-          expect(test_instance.has_event_config?(:create)).to be true
-          expect(test_instance.has_event_config?(:update)).to be true
+          expect(test_instance.event_config?(:create)).to be true
+          expect(test_instance.event_config?(:update)).to be true
         end
 
         it 'returns false for unconfigured events' do
-          expect(test_instance.has_event_config?(:destroy)).to be false
+          expect(test_instance.event_config?(:destroy)).to be false
         end
       end
 
@@ -158,7 +160,7 @@ RSpec.describe RailsOutbox::Emits do
         end
 
         it 'returns true for configured column events' do
-          expect(test_instance.has_event_config?(:update)).to be true
+          expect(test_instance.event_config?(:update)).to be true
         end
       end
     end

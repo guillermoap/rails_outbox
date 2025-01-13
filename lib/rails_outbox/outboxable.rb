@@ -13,8 +13,8 @@ module RailsOutbox
     included do
       extend Emits
 
-      *namespace, klass = name.underscore.upcase.split('/')
-      namespace = namespace.reverse.join('.')
+      *namespace, _ = name.underscore.upcase.split('/')
+      namespace.reverse.join('.')
 
       module_parent.const_set('RailsOutbox', Module.new) unless module_parent.const_defined?('RailsOutbox', false)
       unless module_parent::RailsOutbox.const_defined?('Events', false)
@@ -24,19 +24,19 @@ module RailsOutbox
       Constants::VALID_EVENTS.each_key do |event|
         send(
           "after_#{event}", -> { process_emissions_for(event) },
-          if: -> { has_event_config?(event) }
+          if: -> { event_config?(event) }
         )
       end
     end
 
     def save(**options, &block)
       assign_outbox_event(options)
-      super(**options, &block)
+      super
     end
 
     def save!(**options, &block)
       assign_outbox_event(options)
-      super(**options, &block)
+      super
     end
 
     private
@@ -45,7 +45,7 @@ module RailsOutbox
       @outbox_event = options[:outbox_event].underscore.upcase if options[:outbox_event].present?
     end
 
-    def should_emit?(action, config)
+    def should_emit?(config)
       # For column tracking, only emit if the column changed
       if config[:column]
         column_name = config[:column][:name].to_s
@@ -57,7 +57,7 @@ module RailsOutbox
 
     def process_emissions_for(action)
       config = self.class.instance_variable_get(:@outbox_events)&.[](action)
-      return unless config && should_emit?(action, config)
+      return unless config && should_emit?(config)
 
       event_name = if config[:column] && config[:column][:event] != :default
         config[:column][:event].to_s.upcase

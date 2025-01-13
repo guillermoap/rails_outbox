@@ -224,13 +224,14 @@ RSpec.describe RailsOutbox::OutboxPersistence do
       end
 
       context 'without any mapping' do
+        let!(:original_mapping) { RailsOutbox.config.outbox_mapping.dup }
+
         before do
-          @original_mapping = RailsOutbox.config.outbox_mapping.dup
           RailsOutbox.config.outbox_mapping.clear
         end
 
         after do
-          RailsOutbox.config.outbox_mapping = @original_mapping
+          RailsOutbox.config.outbox_mapping = original_mapping
         end
 
         it 'raises OutboxClassNotFoundError' do

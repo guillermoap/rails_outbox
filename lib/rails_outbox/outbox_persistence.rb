@@ -56,9 +56,6 @@ module RailsOutbox
       when :update, :save, :commit, :touch
         changes = previous_changes.transform_values(&:first)
         { before: as_json.merge(changes), after: as_json }
-      when :touch
-        changes = previous_changes.transform_values(&:first)
-        { before: as_json.merge(changes), after: as_json }
       when :destroy
         { before: as_json, after: nil }
       when :rollback

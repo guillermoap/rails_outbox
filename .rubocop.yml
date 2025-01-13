@@ -15,6 +15,9 @@ AllCops:
 Gemspec/RequireMFA:
   Enabled: false
 
+Metrics/CyclomaticComplexity:
+  Max: 10
+
 Metrics/MethodLength:
   Max: 50
 
@@ -26,12 +29,21 @@ Layout/EndAlignment:
 
 Layout/ArgumentAlignment:
   EnforcedStyle: with_fixed_indentation
+  
+RSpec/ExampleLength:
+  Max: 25
 
+RSpec/MultipleExpectations:
+  Max: 2
+  
 RSpec/MultipleMemoizedHelpers:
   Max: 10
 
 RSpec/NestedGroups:
   Max: 7
+
+RSpec/RemoveConst:
+  Enabled: false
 
 RSpec/SpecFilePathFormat:
   Exclude:
@@ -39,3 +51,7 @@ RSpec/SpecFilePathFormat:
 
 Style/Documentation:
   Enabled: false
+
+Style/FrozenStringLiteralComment:
+  Enabled: true
+  SafeAutoCorrect: true

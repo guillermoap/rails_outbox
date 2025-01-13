@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-RSpec.describe 'Column specific events' do
+RSpec.describe RailsOutbox::Outboxable do
   let(:model_class) { FakeEmitsModel }
   let(:outbox_class) { Outbox }
   let!(:instance) { model_class.create!(test_field: 'original') }

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rails_outbox/constants'
 
 module RailsOutbox
@@ -7,7 +9,7 @@ module RailsOutbox
     end
 
     module InstanceMethods
-      def has_event_config?(event)
+      def event_config?(event)
         self.class.instance_variable_get(:@outbox_events)&.[](event).present?
       end
     end
