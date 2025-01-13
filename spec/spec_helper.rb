@@ -4,6 +4,7 @@ ENV['RAILS_ENV'] ||= 'test'
 
 require 'rails_outbox'
 require 'active_record'
+require 'active_support/testing/time_helpers'
 require 'byebug'
 require 'database_cleaner/active_record'
 require 'simplecov'
@@ -55,6 +56,7 @@ RSpec.configure do |config|
     c.syntax = :expect
   end
 
+  config.include ActiveSupport::Testing::TimeHelpers
   config.include OutboxableTestHelpers
 
   config.before(:suite) do
@@ -77,3 +79,10 @@ end
 
 RSpec::Matchers.define_negated_matcher :not_change, :change
 RSpec::Matchers.define_negated_matcher :exclude, :include
+
+def create_event_name(fake_model_class, action)
+  *namespace, klass = fake_model_class.name.underscore.upcase.split('/')
+  namespace = namespace.reverse.join('.')
+  event_name = "#{klass}_#{action.upcase}"
+  "#{event_name}#{namespace.blank? ? '' : '.'}#{namespace}"
+end

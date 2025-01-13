@@ -10,7 +10,7 @@ Outbox = Class.new(ActiveRecord::Base) do
     'Outbox'
   end
 
-  validates_presence_of :identifier, :payload, :aggregate, :aggregate_identifier, :event
+  validates_presence_of :payload, :aggregate, :aggregate_identifier, :event
 end
 
 Uuid::Outbox = Class.new(ActiveRecord::Base) do
@@ -22,7 +22,23 @@ Uuid::Outbox = Class.new(ActiveRecord::Base) do
     'uuid_outboxes'
   end
 
-  validates_presence_of :identifier, :payload, :aggregate, :aggregate_identifier, :event
+  validates_presence_of :payload, :aggregate, :aggregate_identifier, :event
+
+  before_validation -> { self.id = SecureRandom.uuid if id.nil? }
+end
+
+FakeEmitsModel = Class.new(ActiveRecord::Base) do
+  def self.name
+    'FakeEmitsModel'
+  end
+
+  def self.table_name
+    'fake_models'
+  end
+
+  validates_presence_of :test_field
+
+  include RailsOutbox::Outboxable
 end
 
 FakeModel = Class.new(ActiveRecord::Base) do
@@ -32,6 +48,8 @@ FakeModel = Class.new(ActiveRecord::Base) do
 
   validates_presence_of :test_field
   include RailsOutbox::Outboxable
+
+  emits_on :create, :update, :destroy, :save, :commit, :rollback, :touch
 end
 
 Uuid::FakeModel = Class.new(ActiveRecord::Base) do
@@ -45,6 +63,10 @@ Uuid::FakeModel = Class.new(ActiveRecord::Base) do
 
   validates_presence_of :test_field
   include RailsOutbox::Outboxable
+
+  before_validation -> { self.id = SecureRandom.uuid if id.nil? }
+
+  emits_on :create, :update, :destroy, :save, :commit, :rollback, :touch
 end
 
 def create_migrations
@@ -55,10 +77,11 @@ end
 def id_migrations
   ActiveRecord::Base.connection.create_table :fake_models, if_not_exists: true do |t|
     t.string :test_field
+
+    t.timestamps
   end
 
   ActiveRecord::Base.connection.create_table :outboxes, if_not_exists: true do |t|
-    t.send(RailsOutbox::AdapterHelper.uuid_type, :identifier, null: false, index: { unique: true })
     t.string :event, null: false
     t.send(RailsOutbox::AdapterHelper.json_type, :payload)
     t.string :aggregate, null: false
@@ -70,12 +93,14 @@ end
 
 def uuid_migrations
   ActiveRecord::Base.connection.create_table :uuid_fake_models, if_not_exists: true, id: false do |t|
-    t.send(RailsOutbox::AdapterHelper.uuid_type, :identifier, primary_key: true)
+    t.send(RailsOutbox::AdapterHelper.uuid_type, :id, primary_key: true)
     t.string :test_field
+
+    t.timestamps
   end
 
-  ActiveRecord::Base.connection.create_table :uuid_outboxes, if_not_exists: true do |t|
-    t.send(RailsOutbox::AdapterHelper.uuid_type, :identifier, null: false, index: { unique: true })
+  ActiveRecord::Base.connection.create_table :uuid_outboxes, if_not_exists: true, id: false do |t|
+    t.send(RailsOutbox::AdapterHelper.uuid_type, :id, primary_key: true)
     t.string :event, null: false
     t.send(RailsOutbox::AdapterHelper.json_type, :payload)
     t.string :aggregate, null: false
