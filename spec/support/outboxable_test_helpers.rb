@@ -11,7 +11,7 @@ module OutboxableTestHelpers
 
       if @attributes
         @attributes = @attributes.call if @attributes.is_a? Proc
-        outboxes = outbox_class.last(count).map do |outbox|
+        outboxes = outbox_class.order(:created_at, outbox_class.primary_key).last(count).map do |outbox|
           outbox.attributes.tap do |attr|
             attr['payload'] = JSON.parse(attr['payload']) unless RailsOutbox::AdapterHelper.postgres?
           end

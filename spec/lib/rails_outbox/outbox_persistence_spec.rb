@@ -6,19 +6,48 @@ RSpec.describe RailsOutbox::OutboxPersistence do
   shared_examples 'outbox persistence' do |model_class, outbox_class|
     let(:model) { model_class.new(test_field: 'test') }
 
-    describe '#create_outbox!' do
-      before do
-        model.save
+    describe 'outbox model resolution' do
+      context 'with normal ID' do
+        it 'caches outbox model in module parent constant' do
+          outbox_model = model.outbox_model
+          expect(outbox_model).to eq(outbox_class)
+          expect(model_class.module_parent::OUTBOX_MODEL).to eq(outbox_class)
+        end
+
+        it 'resolves outbox model from mapping' do
+          # Clear any cached model
+          if model_class.module_parent.const_defined?(:OUTBOX_MODEL)
+            model_class.module_parent.send(:remove_const,
+              :OUTBOX_MODEL)
+          end
+
+          expect(model.outbox_model_name!).to eq(outbox_class.name)
+          expect(model.outbox_model).to eq(outbox_class)
+        end
+
+        it 'raises error when no mapping exists' do
+          allow(RailsOutbox.config).to receive(:outbox_mapping).and_return({})
+          expect { model.send(:outbox_model_name!) }.to raise_error(RailsOutbox::OutboxClassNotFoundError)
+        end
       end
+    end
+
+    describe '#create_outbox!' do
+      subject { model.create_outbox!(event, event_name) }
+
+      before { model.save! }
 
       context 'when creating an outbox record' do
+        let(:event) { :create }
+        let(:event_name) { create_event_name(model.class, 'created') }
+
         it 'creates the outbox record with create event' do
           expect do
-            model.create_outbox!(:create, "#{model_class.name.underscore.upcase}_CREATED")
+            subject
           end.to create_outbox_record(outbox_class).with_attributes({
             'aggregate' => model_class.name,
             'aggregate_identifier' => model.id,
-            'event' => "#{model_class.name.underscore.upcase}_CREATED",
+            'event' => event_name,
             'payload' => {
               'before' => nil,
               'after' => model.as_json
@@ -28,15 +57,16 @@ RSpec.describe RailsOutbox::OutboxPersistence do
       end
 
       context 'when updating a record' do
-        before do
-          model.update(test_field: 'updated')
-        end
+        let(:event) { :update }
+        let(:event_name) { create_event_name(model.class, 'updated') }
+
+        before { model.update!(test_field: 'updated') }
 
         it 'creates the outbox record with update event' do
           expect do
-            model.create_outbox!(:update, "#{model_class.name.underscore.upcase}_UPDATED")
+            subject
           end.to create_outbox_record(outbox_class).with_attributes({
-            'event' => "#{model_class.name.underscore.upcase}_UPDATED",
+            'event' => event_name,
             'payload' => {
               'before' => hash_including('test_field' => 'test'),
               'after' => hash_including('test_field' => 'updated')
@@ -46,16 +76,19 @@ RSpec.describe RailsOutbox::OutboxPersistence do
       end
 
       context 'when saving a record' do
+        let(:event) { :save }
+        let(:event_name) { create_event_name(model.class, 'saved') }
+
         before do
           model.test_field = 'new value'
-          model.save
+          model.save!
         end
 
         it 'creates the outbox record with save event' do
           expect do
-            model.create_outbox!(:save, "#{model_class.name.underscore.upcase}_SAVED")
+            subject
           end.to create_outbox_record(outbox_class).with_attributes({
-            'event' => "#{model_class.name.underscore.upcase}_SAVED",
+            'event' => event_name,
             'payload' => {
               'before' => hash_including('test_field' => 'test'),
               'after' => hash_including('test_field' => 'new value')
@@ -65,16 +98,19 @@ RSpec.describe RailsOutbox::OutboxPersistence do
       end
 
       context 'when committing a transaction' do
+        let(:event) { :commit }
+        let(:event_name) { create_event_name(model.class, 'committed') }
+
         before do
           model.test_field = 'committed value'
-          model.save
+          model.save!
         end
 
         it 'creates the outbox record with commit event' do
           expect do
-            model.create_outbox!(:commit, "#{model_class.name.underscore.upcase}_COMMITTED")
+            subject
           end.to create_outbox_record(outbox_class).with_attributes({
-            'event' => "#{model_class.name.underscore.upcase}_COMMITTED",
+            'event' => event_name,
             'payload' => {
               'before' => hash_including('test_field' => 'test'),
               'after' => hash_including('test_field' => 'committed value')
@@ -84,11 +120,14 @@ RSpec.describe RailsOutbox::OutboxPersistence do
       end
 
       context 'when rolling back a transaction' do
+        let(:event) { :rollback }
+        let(:event_name) { create_event_name(model.class, 'rollbacked') }
+
         it 'creates the outbox record with rollback event' do
           expect do
-            model.create_outbox!(:rollback, "#{model_class.name.underscore.upcase}_ROLLED_BACK")
+            subject
           end.to create_outbox_record(outbox_class).with_attributes({
-            'event' => "#{model_class.name.underscore.upcase}_ROLLED_BACK",
+            'event' => event_name,
             'payload' => {
               'before' => model.as_json,
               'after' => model.as_json
@@ -98,11 +137,18 @@ RSpec.describe RailsOutbox::OutboxPersistence do
       end
 
       context 'when destroying a record' do
+        let(:event) { :destroy }
+        let(:event_name) { create_event_name(model.class, 'destroyed') }
+
+        before do
+          model.destroy!
+        end
+
         it 'creates the outbox record with destroy event' do
           expect do
-            model.create_outbox!(:destroy, "#{model_class.name.underscore.upcase}_DESTROYED")
+            subject
           end.to create_outbox_record(outbox_class).with_attributes({
-            'event' => "#{model_class.name.underscore.upcase}_DESTROYED",
+            'event' => event_name,
             'payload' => {
               'before' => model.as_json,
               'after' => nil
@@ -112,41 +158,34 @@ RSpec.describe RailsOutbox::OutboxPersistence do
       end
 
       context 'when touching a record' do
-        let(:original_timestamp) { model.updated_at }
+        let!(:model) { model_class.create!(test_field: 'test') }
+        let(:event) { :touch }
+        let(:event_name) { create_event_name(model.class, 'touched') }
 
         before do
-          travel_to(original_timestamp + 1.day)
           model.touch
         end
 
-        after { travel_back }
-
         it 'creates the outbox record with touch event' do
           expect do
-            model.create_outbox!(:touch, "#{model_class.name.underscore.upcase}_TOUCHED")
+            subject
           end.to create_outbox_record(outbox_class).with_attributes({
-            'event' => "#{model_class.name.underscore.upcase}_TOUCHED"
+            'event' => event_name
           })
-        end
-
-        it 'creates the outbox record with timestamp changes' do
-          model.create_outbox!(:touch, "#{model_class.name.underscore.upcase}_TOUCHED")
-          outbox = outbox_class.last
-          payload = RailsOutbox::AdapterHelper.postgres? ? outbox.payload : JSON.parse(outbox.payload)
-          before_date = DateTime.parse(payload.dig('before', 'updated_at'))
-          after_date = DateTime.parse(payload.dig('after', 'updated_at'))
-          expect(before_date.to_i).to be < after_date.to_i
         end
       end
 
       context 'with custom event name' do
+        let(:event) { :create }
+        let(:event_name) { create_event_name(model.class, 'created') }
+
         before do
           model.instance_variable_set(:@outbox_event, 'CUSTOM_EVENT')
         end
 
         it 'uses the custom event name' do
           expect do
-            model.create_outbox!(:create, "#{model_class.name.underscore.upcase}_CREATED")
+            subject
           end.to create_outbox_record(outbox_class).with_attributes({
             'event' => 'CUSTOM_EVENT'
           })

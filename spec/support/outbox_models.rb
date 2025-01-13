@@ -49,7 +49,7 @@ FakeModel = Class.new(ActiveRecord::Base) do
   validates_presence_of :test_field
   include RailsOutbox::Outboxable
 
-  emits_on :create, :update, :destroy
+  emits_on :create, :update, :destroy, :save, :commit, :rollback, :touch
 end
 
 Uuid::FakeModel = Class.new(ActiveRecord::Base) do
@@ -66,7 +66,7 @@ Uuid::FakeModel = Class.new(ActiveRecord::Base) do
 
   before_validation -> { self.id = SecureRandom.uuid if id.nil? }
 
-  emits_on :create, :update, :destroy
+  emits_on :create, :update, :destroy, :save, :commit, :rollback, :touch
 end
 
 def create_migrations

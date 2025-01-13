@@ -79,3 +79,10 @@ end
 
 RSpec::Matchers.define_negated_matcher :not_change, :change
 RSpec::Matchers.define_negated_matcher :exclude, :include
+
+def create_event_name(fake_model_class, action)
+  *namespace, klass = fake_model_class.name.underscore.upcase.split('/')
+  namespace = namespace.reverse.join('.')
+  event_name = "#{klass}_#{action.upcase}"
+  "#{event_name}#{namespace.blank? ? '' : '.'}#{namespace}"
+end
