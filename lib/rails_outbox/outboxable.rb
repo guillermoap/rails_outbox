@@ -1,32 +1,31 @@
 # frozen_string_literal: true
 
 require 'active_support/concern'
+require_relative 'emits'
+require_relative 'constants'
+require_relative 'outbox_persistence'
 
 module RailsOutbox
   module Outboxable
     extend ActiveSupport::Concern
+    include OutboxPersistence
 
     included do
+      extend Emits
+
       *namespace, klass = name.underscore.upcase.split('/')
       namespace = namespace.reverse.join('.')
 
       module_parent.const_set('RailsOutbox', Module.new) unless module_parent.const_defined?('RailsOutbox', false)
-
       unless module_parent::RailsOutbox.const_defined?('Events', false)
         module_parent::RailsOutbox.const_set('Events', Module.new)
       end
 
-      { create: 'CREATED', update: 'UPDATED', destroy: 'DESTROYED' }.each do |key, value|
-        const_name = "#{klass}_#{value}"
-
-        unless module_parent::RailsOutbox::Events.const_defined?(const_name)
-          module_parent::RailsOutbox::Events.const_set(const_name,
-            "#{const_name}#{namespace.blank? ? '' : '.'}#{namespace}")
-        end
-
-        event_name = module_parent::RailsOutbox::Events.const_get(const_name)
-
-        send("after_#{key}") { create_outbox!(key, event_name) }
+      Constants::VALID_EVENTS.each_key do |event|
+        send(
+          "after_#{event}", -> { process_emissions_for(event) },
+          if: -> { has_event_config?(event) }
+        )
       end
     end
 
@@ -46,70 +45,35 @@ module RailsOutbox
       @outbox_event = options[:outbox_event].underscore.upcase if options[:outbox_event].present?
     end
 
-    def create_outbox!(action, event_name)
-      outbox = outbox_model.new(
-        aggregate: self.class.name,
-        aggregate_identifier: send(self.class.primary_key),
-        event: @outbox_event || event_name,
-        identifier: SecureRandom.uuid,
-        payload: formatted_payload(action)
-      )
-      @outbox_event = nil
-      handle_outbox_errors(outbox) if outbox.invalid?
-      outbox.save!
-    end
-
-    def outbox_model
-      module_parent = self.class.module_parent
-      # sets _inherit_ option to false so it doesn't lookup in ancestors for the constant
-      unless module_parent.const_defined?('OUTBOX_MODEL', false)
-        outbox_model = outbox_model_name!.safe_constantize
-        module_parent.const_set('OUTBOX_MODEL', outbox_model)
+    def should_emit?(action, config)
+      # For column tracking, only emit if the column changed
+      if config[:column]
+        column_name = config[:column][:name].to_s
+        return false unless previous_changes.key?(column_name)
       end
 
-      module_parent.const_get('OUTBOX_MODEL')
+      true
     end
 
-    def outbox_model_name!
-      namespace_outbox_mapping || default_outbox_mapping || raise(OutboxClassNotFoundError)
-    end
+    def process_emissions_for(action)
+      config = self.class.instance_variable_get(:@outbox_events)&.[](action)
+      return unless config && should_emit?(action, config)
 
-    def namespace_outbox_mapping
-      namespace = self.class.module_parent.name.underscore
-
-      RailsOutbox.config.outbox_mapping[namespace]
-    end
-
-    def default_outbox_mapping
-      RailsOutbox.config.outbox_mapping['default']
-    end
-
-    def handle_outbox_errors(outbox)
-      outbox.errors.each do |error|
-        errors.import(error, attribute: "outbox.#{error.attribute}")
-      end
-    end
-
-    def formatted_payload(action)
-      payload = construct_payload(action)
-      AdapterHelper.postgres? ? payload : payload.to_json
-    end
-
-    def construct_payload(action)
-      case action
-      when :create
-        { before: nil, after: as_json }
-      when :update
-        changes = previous_changes.transform_values(&:first)
-        { before: as_json.merge(changes), after: as_json }
-      when :destroy
-        { before: as_json, after: nil }
+      event_name = if config[:column] && config[:column][:event] != :default
+        config[:column][:event].to_s.upcase
       else
-        raise ActiveRecord::RecordNotSaved.new(
-          "Failed to create Outbox payload for #{self.class.name}: #{send(self.class.primary_key)}",
-          self
-        )
+        determine_default_event_name(action)
       end
+
+      create_outbox!(action, event_name)
+    end
+
+    def determine_default_event_name(action)
+      *namespace, klass = self.class.name.underscore.upcase.split('/')
+      namespace = namespace.reverse.join('.')
+      event_suffix = Constants::VALID_EVENTS[action.to_sym]
+
+      "#{klass}_#{event_suffix}#{namespace.blank? ? '' : '.'}#{namespace}"
     end
   end
 end
