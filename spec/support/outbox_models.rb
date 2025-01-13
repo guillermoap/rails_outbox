@@ -38,7 +38,7 @@ FakeEmitsModel = Class.new(ActiveRecord::Base) do
 
   validates_presence_of :test_field
 
-  extend RailsOutbox::Emits
+  include RailsOutbox::Outboxable
 end
 
 FakeModel = Class.new(ActiveRecord::Base) do
