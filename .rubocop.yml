@@ -45,6 +45,10 @@ RSpec/NestedGroups:
 RSpec/RemoveConst:
   Enabled: false
 
+RSpec/FilePath:
+  Exclude:
+    - spec/lib/rails_outbox/outboxable/*
+
 RSpec/SpecFilePathFormat:
   Exclude:
     - spec/lib/rails_outbox/outboxable/*
