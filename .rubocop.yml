@@ -49,6 +49,11 @@ RSpec/SpecFilePathFormat:
   Exclude:
     - spec/lib/rails_outbox/outboxable/*
 
+RSpec/SpecFilePathSuffix:
+  Exclude:
+    - spec/lib/rails_outbox/outboxable/*
+  
+
 Style/Documentation:
   Enabled: false
 
